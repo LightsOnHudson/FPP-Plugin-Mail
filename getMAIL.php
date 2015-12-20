@@ -14,6 +14,8 @@ $LOG_LEVEL=0;
 
 $NEW_MESSAGE=false;
 
+$RESPONSE_METHOD = "EMAIL";
+
 $skipJSsettings = 1;
 include_once("/opt/fpp/www/config.php");
 include_once("/opt/fpp/www/common.php");
@@ -67,7 +69,8 @@ $MATRIX_EXEC_PAGE_NAME = "matrix.php";
 	$MATRIX_LOCATION = $pluginSettings['MATRIX_LOCATION'];
 	$MAIL_TYPE = $pluginSettings['MAIL_TYPE'];
 	$MAIL_HOST = urldecode($pluginSettings['MAIL_HOST']);
-	$MAIL_PORT = urldecode($pluginSettings['$MAIL_PORT']);
+	$MAIL_PORT = urldecode($pluginSettings['MAIL_PORT']);
+	$MAIL_LAST_TIMESTAMP= urldecode($pluginSettings['MAIL_LAST_TIMESTAMP']);
 	$ENABLED = $pluginSettings['ENABLED'];
 
 $LOG_LEVEL = getFPPLogLevel();
@@ -199,10 +202,12 @@ if($emails) {
 	    /* output the email header information */
 	
 		$subject = $overview[0]->subject." ";
+		$subject = trim($subject);
+
 		$from =  $overview[0]->from;
-	
-		echo "From: ".$from."\n";
+
 		$from =  get_string_between($from,"<",">");
+		if($DEBUG)	
 		echo "from: ".$from."\n";
 	
 		//the to is the first one and the from is the second
@@ -247,7 +252,15 @@ if($emails) {
 	 
 		 $MESSAGE_USED=false;
 	     
-		 $messageText = $message;
+	//	 $messageText = $message;
+
+		if($subject != "") {
+			$messageText = $subject;
+		}
+
+		if($message != "") {
+			$messageText .= $message;
+		}
 	
 		 $profanityCheck = check_for_profanity($messageText);
 		 
@@ -259,20 +272,19 @@ if($emails) {
 		 	$subject="";
 		 	 
 		 	sendResponse($from,$REPLY_TEXT,$from,$subject);
-		 	//processSMSMessage($from,$messageText);
+		 	processSMSMessage($from,$messageText);
 		 	sleep(1);
 		 
 		 } else {
 		 	$subject="";
 		 	logEntry("message: ".$messageText." FAILED");
-		 	$REPLY_TEXT = "Your message contains profanity, sorry. More messages like these will ban your phone number";
-		 	// $gv->sendSMS($from,$REPLY_TEXT);
+		 	$PROFANITY_REPLY_TEXT = "Your message contains profanity, sorry. More messages like these will ban your phone number";
 		 	$subject="";
-		 	sendResponse($from,$REPLY_TEXT,$GMAIL_ADDRESS,$subject);
+		 	sendResponse($from,$PROFANITY_REPLY_TEXT,$from,$subject);
 		 	sleep(1);
-        }
+	        }
 
-
+	}
 }
 
 /* close the connection */
