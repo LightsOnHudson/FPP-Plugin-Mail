@@ -146,7 +146,7 @@ switch (trim(strtoupper($MAIL_HOST))) {
 		
 		//$imap_search ='SUBJECT "SMS from"';
 		
-		$hostname = "{".$MAIL_HOST.":".$MAIL_PORT."/}$path";
+		$hostname = "{".$MAIL_HOST.":".$MAIL_PORT."}$path";
 		//$hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
 		
 		/* try to connect */
