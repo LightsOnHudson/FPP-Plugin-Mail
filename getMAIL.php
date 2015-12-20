@@ -3,7 +3,7 @@
 
 //error_reporting(0);
 
-$pluginName ="Mail";
+$pluginName ="MailControl";
 $myPid = getmypid();
 
 $messageQueue_Plugin = "MessageQueue";

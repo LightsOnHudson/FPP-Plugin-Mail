@@ -4,7 +4,7 @@
 include_once "/opt/fpp/www/common.php";
 include_once 'functions.inc.php';
 include_once 'commonFunctions.inc.php';
-$pluginName = "Mail";
+$pluginName = "MailControl";
 
 $messageQueue_Plugin = "MessageQueue";
 $MESSAGE_QUEUE_PLUGIN_ENABLED=false;
