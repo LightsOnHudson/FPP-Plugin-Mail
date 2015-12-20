@@ -146,11 +146,11 @@ switch (trim(strtoupper($MAIL_HOST))) {
 		
 		//$imap_search ='SUBJECT "SMS from"';
 		
-		$hostname = "{imap.gmail.com:993/imap/ssl/novalidate-cert}$path";
+		$hostname = "{".$MAIL_HOST.":".$MAIL_PORT."/}$path";
 		//$hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
 		
 		/* try to connect */
-		$mbox = imap_open($hostname,$EMAIL,$PASSWORD) or die('Cannot connect to Gmail: ' . imap_last_error());
+		$mbox = imap_open($hostname,$EMAIL,$PASSWORD) or die('Cannot connect to Imap Server: ' . imap_last_error());
 
 		$imap_search = "ALL";		
 		
