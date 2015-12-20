@@ -99,7 +99,7 @@ if(isset($_POST['submit']))
 	$MATRIX_LOCATION = $pluginSettings['MATRIX_LOCATION'];
 	$MAIL_TYPE = $pluginSettings['MAIL_TYPE'];
 	$MAIL_HOST = urldecode($pluginSettings['MAIL_HOST']);
-	$MAIL_PORT = urldecode($pluginSettings['$MAIL_PORT']);
+	$MAIL_PORT = urldecode($pluginSettings['MAIL_PORT']);
 	$ENABLED = $pluginSettings['ENABLED'];
 
 if($REPLY_TEXT == "") {
@@ -238,7 +238,7 @@ PrintMediaOptions();
 
 echo "<p/> \n";
 
-echo "Email Address: \n";
+echo "Email Address/Username: \n";
   
 echo "<input type=\"text\" name=\"EMAIL\" size=\"16\" value=\"".$EMAIL."\"> \n";
  
@@ -278,6 +278,18 @@ echo "<select name=\"MAIL_TYPE\"> \n";
 			echo "</select> \n";
 echo "<p/> \n";
 
+echo "Mail Server(host): \n";
+
+echo "<input type=\"text\" name=\"MAIL_HOST\" size=\"32\" value=\"".$MAIL_HOST."\"> \n";
+
+
+echo "<p/> \n";
+echo "Mail Server Port: \n";
+
+echo "<input type=\"text\" name=\"MAIL_PORT\" size=\"4\" value=\"".$MAIL_PORT."\"> \n";
+
+
+echo "<p/> \n";
 
 echo "Valid Commands: \n";
 
