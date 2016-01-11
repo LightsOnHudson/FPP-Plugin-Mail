@@ -23,7 +23,8 @@ function sendResponse($from,$REPLY_TEXT,$GMAIL_ADDRESS,$subject) {
 }
 //sendmail using phpmailer function
 function sendMail($to, $from, $subject, $body) {
-	global $DEBUG, $EMAIL, $PASSWORD;
+	
+	global $DEBUG, $EMAIL, $PASSWORD, $USERNAME,$hostname, $MAIL_HOST, $MAIL_PORT;
 
 	date_default_timezone_set('Etc/UTC');
 
@@ -51,27 +52,61 @@ function sendMail($to, $from, $subject, $body) {
 		$mail->SMTPDebug = 0;
 	}
 
-	//Ask for HTML-friendly debug output
-	if($DEBUG)
-		$mail->Debugoutput = 'html';
-
-		//Set the hostname of the mail server
-		$mail->Host = 'smtp.gmail.com';
+	switch (trim(strtoupper($MAIL_HOST))) {
+	
+	
+		case "IMAP.GMAIL.COM":
+			//Set the hostname of the mail server
+		$mail->Host = gethostbyname('smtp.gmail.com');
 		// use
+	
+		//Set the SMTP port number - 587 for authenticated TLS, a.k.a. RFC4409 SMTP submission
+		$mail->Port = 587;
+		//Username to use for SMTP authentication - use full email address for gmail
+		$mail->Username = $EMAIL;
+		$mail->SMTPSecure = 'tls';
+	
+				break;
+	
+	
+		default:
+			//$hostname = '{imap.gmail.com:993/imap/ssl}ALL';
+			$path="INBOX";
+	
+		//Set the hostname of the mail server
+		
+			///TEST HOST
+			$MAIL_HOST = "smtp.incanberra.biz";
+		$mail->Host = gethostbyname($MAIL_HOST);
+		
+		//Set the SMTP port number - 587 for authenticated TLS, a.k.a. RFC4409 SMTP submission
+		$mail->Port = $MAIL_PORT;
+		
+			$USERNAME = substr($EMAIL,0,strpos($EMAIL,"@"));
+			if($DEBUG)
+				logEntry("Username extracted from email: ".$USERNAME);
+		$mail->Username = $USERNAME;
+		$mail->SMTPSecure = 'tls';
+		// use
+		
+		
+	
+		break;
+	
+	}
+	//Ask for HTML-friendly debug output
+	
 		// $mail->Host = gethostbyname('smtp.gmail.com');
 		// if your network does not support SMTP over IPv6
 
-		//Set the SMTP port number - 587 for authenticated TLS, a.k.a. RFC4409 SMTP submission
-		$mail->Port = 587;
-
+		
 		//Set the encryption system to use - ssl (deprecated) or tls
-		$mail->SMTPSecure = 'tls';
+		
 
 		//Whether to use SMTP authentication
 		$mail->SMTPAuth = true;
 
-		//Username to use for SMTP authentication - use full email address for gmail
-		$mail->Username = $EMAIL;
+		
 
 		//Password to use for SMTP authentication
 		$mail->Password = $PASSWORD;
@@ -94,6 +129,20 @@ function sendMail($to, $from, $subject, $body) {
 
 		//Replace the plain text body with one created manually
 		$mail->AltBody = $body;
+		
+		if($DEBUG) {
+			$mail->Debugoutput = 'html';
+			logEntry("SMTP host: ".$mail->Host);
+			logEntry("SMTP port: ".$mail->Port);
+			logEntry("SMTP send username: ".$mail->Username);
+			logEntry("SMTP send password: ".$mail->Password);
+			//logEntry("SMTP send setFrom: ");
+			logEntry("SMTP send smtpAuth: ".$mail->SMTPAuth);
+			logEntry("SMTP send smtpSEcure: ".$mail->SMTPSecure);
+			logEntry("SMTP send subject: ".$mail->Subject);
+		
+		
+		}
 
 		//Attach an image file
 		//$mail->addAttachment('images/phpmailer_mini.png');

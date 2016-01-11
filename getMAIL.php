@@ -17,13 +17,17 @@ $NEW_MESSAGE=false;
 $RESPONSE_METHOD = "EMAIL";
 
 $skipJSsettings = 1;
-include_once("/opt/fpp/www/config.php");
-include_once("/opt/fpp/www/common.php");
+$fppWWWPath = '/opt/fpp/www/';
+set_include_path(get_include_path() . PATH_SEPARATOR . $fppWWWPath);
+
+require("common.php");
+
 include_once("functions.inc.php");
 include_once("commonFunctions.inc.php");
 include_once("profanity.inc.php");
 //include_once ("GoogleVoice.php");
 require 'PHPMailer/PHPMailerAutoload.php';
+require ("lock.helper.php");
 
 $logFile = $settings['logDirectory']."/".$pluginName.".log";
 
@@ -40,7 +44,7 @@ if(file_exists($messageQueuePluginPath."functions.inc.php"))
                 logEntry("Message Queue Plugin not installed, some features will be disabled");
         }
 
-require ("lock.helper.php");
+
 
 define('LOCK_DIR', '/tmp/');
 define('LOCK_SUFFIX', '.lock');
@@ -48,6 +52,8 @@ define('LOCK_SUFFIX', '.lock');
 $pluginConfigFile = $settings['configDirectory'] . "/plugin." .$pluginName;
 if (file_exists($pluginConfigFile))
         $pluginSettings = parse_ini_file($pluginConfigFile);
+
+        
 
 
 $MATRIX_MESSAGE_PLUGIN_NAME = "MatrixMessage";
@@ -72,16 +78,17 @@ $MATRIX_EXEC_PAGE_NAME = "matrix.php";
 	$MAIL_PORT = urldecode($pluginSettings['MAIL_PORT']);
 	$MAIL_LAST_TIMESTAMP= urldecode($pluginSettings['MAIL_LAST_TIMESTAMP']);
 	$ENABLED = $pluginSettings['ENABLED'];
+	$DEBUG = $pluginSettings['DEBUG'];
+	$READ_MESSAGE_MARK = $pluginSettings['READ_MESSAGE_MARK'];
+	$PROFANITY_ENGINE = urldecode($pluginSettings['PROFANITY_ENGINE']);
 
 $LOG_LEVEL = getFPPLogLevel();
 logEntry("Log level in translated from fpp settings file: ".$LOG_LEVEL);
 
-if(urldecode($pluginSettings['DEBUG'] != "")) {
+if(urldecode($pluginSettings['DEBUG'] != "" || urldecode($pluginSettings['DEBUG'] != 0))) {
         $DEBUG=urldecode($pluginSettings['DEBUG']);
 }
 
-if($DEBUG)
-        print_r($pluginSettings);
 
 
 $COMMAND_ARRAY = explode(",",trim(strtoupper($VALID_COMMANDS)));
@@ -91,8 +98,7 @@ $CONTROL_NUMBER_ARRAY = explode(",",$CONTROL_NUMBERS);
 $WHITELIST_NUMBER_ARRAY = explode(",",$WHITELIST_NUMBERS);
 
 $logFile = $settings['logDirectory']."/".$pluginName.".log";
-if($DEBUG)
-print_r($COMMAND_ARRAY);
+
 
 //give google voice time to sleep
 $GVSleepTime = 5;
@@ -115,8 +121,32 @@ if($ENABLED != "on" && $ENABLED != "1") {
 }
 
 if($DEBUG){
-        logEntry("user: ".$EMAIL);
-        logEntry("pass: ".$PASSWORD);
+	logEntry("________________________");
+	logEntry("Plugin Settings");
+	logEntry("________________________");
+	
+	while (list($key, $val) = each($pluginSettings)) {
+		logEntry("$key => $val");
+	}
+	logEntry("________________________");
+	logEntry("COMMAND ARRAY Settings");
+	logEntry("________________________");
+	while (list($key, $val) = each($COMMAND_ARRAY)) {
+		logEntry("$key => $val");
+	}
+	logEntry("________________________");
+	logEntry("CONTROL NUMBER ARRAY Settings");
+	logEntry("________________________");
+	while (list($key, $val) = each($CONTROL_NUMBER_ARRAY)) {
+		logEntry("$key => $val");
+	}
+	
+	logEntry("________________________");
+	logEntry("WHITELIST ARRAY Settings");
+	logEntry("________________________");
+	while (list($key, $val) = each($WHITELIST_NUMBER_ARRAY)) {
+		logEntry("$key => $val");
+	}
 }
 
 logEntry("Log Level: ".$LOG_LEVEL);
@@ -135,6 +165,10 @@ switch (trim(strtoupper($MAIL_HOST))) {
 		//$hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
 		
 		/* try to connect */
+		
+		$USERNAME = substr($EMAIL,0,strpos($EMAIL,"@"));
+		if($DEBUG)
+			logEntry("Username extracted from email: ".$USERNAME);
 		$mbox = imap_open($hostname,$EMAIL,$PASSWORD) or die('Cannot connect to Gmail: ' . imap_last_error());
 		
 		break;
@@ -150,12 +184,15 @@ switch (trim(strtoupper($MAIL_HOST))) {
 		//$hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
 		
 		/* try to connect */
-		$mbox = imap_open($hostname,$EMAIL,$PASSWORD) or die('Cannot connect to Imap Server: ' . imap_last_error());
+
+		$USERNAME = substr($EMAIL,0,strpos($EMAIL,"@"));
+		if($DEBUG)
+			logEntry("Username extracted from email: ".$USERNAME);
+		$mbox = imap_open($hostname,$USERNAME,$PASSWORD) or die('Cannot connect to Imap Server: ' . imap_last_error());
 
 		$imap_search = "ALL";		
 		
 }
-
 
 
 //Message body Format: 
@@ -207,8 +244,8 @@ if($emails) {
 		$from =  $overview[0]->from;
 
 		$from =  get_string_between($from,"<",">");
-		if($DEBUG)	
-		echo "from: ".$from."\n";
+		//if($DEBUG)	
+		//echo "from: ".$from."\n";
 	
 		//the to is the first one and the from is the second
 	
@@ -248,8 +285,22 @@ if($emails) {
 			logEntry("updating message last download to: ".$messageTimestamp);
 			WriteSettingToFile("MAIL_LAST_TIMESTAMP",$messageTimestamp,$pluginName);
 			
-		 $status = imap_setflag_full($mbox, $mailUID, "\\Seen \\Flagged", ST_UID);
-	 
+			switch ($READ_MESSAGE_MARK) {
+				
+				case "DELETED":
+					$status = imap_setflag_full($mbox, $mailUID, "\\Deleted", ST_UID);
+					
+					break;
+					
+				case "READ":
+					 $status = imap_setflag_full($mbox, $mailUID, "\\Seen \\Flagged", ST_UID);
+					
+					break;
+					
+			}
+			
+		// $status = imap_setflag_full($mbox, $mailUID, "\\Seen \\Flagged", ST_UID);
+		//	$status = imap_setflag_full($mbox, $mailUID, "\\Deleted", ST_UID);
 		 $MESSAGE_USED=false;
 	     
 	//	 $messageText = $message;
@@ -261,28 +312,44 @@ if($emails) {
 		if($message != "") {
 			$messageText .= $message;
 		}
-	
-		 $profanityCheck = check_for_profanity($messageText);
-		 
-		 //returns a list of array,
-		 if($profanityCheck['is-bad'] == 0 && $profanityCheck['bad-words-total'] == 0) {
-		 
-		 	logEntry("Message: ".$messageText. " PASSED");
+		//not from a white listed or a control number so just a regular user
+		//need to check for profanity
+		//profanity checker API
+		switch($PROFANITY_ENGINE) {
+				
+			case "NEUTRINO":
+				$profanityCheck = check_for_profanity_neutrinoapi($messageText);
+				break;
+		
+			case "WEBPURIFY":
+				$profanityCheck = check_for_profanity_WebPurify($messageText);
+				break;
+		
+			default:
+				//default turn off profanity check
+				$profanityCheck == false;
+				break;
+		}
+		if(!$profanityCheck) {
+		
+			logEntry("Message: ".$messageText. " PASSED");
 		 	// $gv->sendSMS($from,$REPLY_TEXT);
 		 	$subject="";
-		 	 
+		 	processMessage($from,$messageText);
 		 	sendResponse($from,$REPLY_TEXT,$from,$subject);
-		 	processSMSMessage($from,$messageText);
+		 	
 		 	sleep(1);
-		 
-		 } else {
-		 	$subject="";
+		
+		} else {
+		$subject="";
 		 	logEntry("message: ".$messageText." FAILED");
 		 	$PROFANITY_REPLY_TEXT = "Your message contains profanity, sorry. More messages like these will ban your phone number";
 		 	$subject="";
 		 	sendResponse($from,$PROFANITY_REPLY_TEXT,$from,$subject);
 		 	sleep(1);
 	        }
+		
+		
 
 	}
 }

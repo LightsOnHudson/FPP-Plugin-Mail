@@ -67,6 +67,20 @@ function processSMSMessage($from,$messageText) {
 
 
 }
+
+function processMessage($from, $messageText) {
+	global $DEBUG;
+	
+	if($DEBUG)
+		logEntry("inside process message");
+	
+	processSMSMessage($from, $messageText);
+	
+	if($DEBUG)
+		logEntry("leaving process message");
+	
+	return;
+}
 //old profanity checkers
 function profanityChecker($messageText) {
 

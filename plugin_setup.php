@@ -1,10 +1,22 @@
 <?php
-//$DEBUG=true;
+$DEBUG=false;
 
 include_once "/opt/fpp/www/common.php";
 include_once 'functions.inc.php';
 include_once 'commonFunctions.inc.php';
 $pluginName = "MailControl";
+
+
+
+$pluginConfigFile = $settings['configDirectory'] . "/plugin." .$pluginName;
+if (file_exists($pluginConfigFile))
+        $pluginSettings = parse_ini_file($pluginConfigFile);
+
+        $DEBUG = $pluginSettings['DEBUG'];
+        
+if(urldecode($pluginSettings['DEBUG'] != "" || urldecode($pluginSettings['DEBUG'] != 0))) {
+	$DEBUG=urldecode($pluginSettings['DEBUG']);
+}
 
 $PLAYLIST_NAME="";
 $MAJOR = "98";
@@ -81,6 +93,8 @@ if(isset($_POST['submit']))
 	WriteSettingToFile("MAIL_TYPE",urlencode($_POST["MAIL_TYPE"]),$pluginName);
 	WriteSettingToFile("MAIL_HOST",urlencode($_POST["MAIL_HOST"]),$pluginName);
 	WriteSettingToFile("MAIL_PORT",urlencode($_POST["MAIL_PORT"]),$pluginName);
+	WriteSettingToFile("READ_MESSAGE_MARK",urlencode($_POST["READ_MESSAGE_MARK"]),$pluginName);
+	WriteSettingToFile("PROFANITY_ENGINE",urlencode($_POST["PROFANITY_ENGINE"]),$pluginName);
 
 }
 
@@ -101,6 +115,10 @@ if(isset($_POST['submit']))
 	$MAIL_HOST = urldecode($pluginSettings['MAIL_HOST']);
 	$MAIL_PORT = urldecode($pluginSettings['MAIL_PORT']);
 	$ENABLED = $pluginSettings['ENABLED'];
+	$READ_MESSAGE_MARK = $pluginSettings['READ_MESSAGE_MARK'];
+	$PROFANITY_ENGINE = urldecode($pluginSettings['PROFANITY_ENGINE']);
+	
+	
 
 if($REPLY_TEXT == "") {
 	$REPLY_TEXT = "Thank you for your message, it has been added to the Queue";
@@ -148,7 +166,7 @@ if($VALID_COMMANDS == "") {
 
 <div id="MailControl" class="settings">
 <fieldset>
-<legend>Mail Control Support Instructions</legend>
+<legend>Mail To Matrix & Control Support Instructions</legend>
 
 <p>Known Issues:
 <ul>
@@ -168,9 +186,16 @@ if($VALID_COMMANDS == "") {
 <li>The Writeplaylist script writes the current running playlist (if any) to a tmp file on /tmp</li>
 </ul>
 <ul>
-<li>This uses the profanity checker located at: https://www.neutrinoapi.com/api/bad-word-filter/</li>
+<li>Profanity Filter</li>
+<li> There are two profanity filter systems available for use for filtering incomming messages</li>
+<li>It is your responsiblity to sign up and procure your own account</li>
+<li> Filter 1: This uses the profanity checker located at: https://www.neutrinoapi.com/api/bad-word-filter/</li>
 <li>You will need to visit this site and generate a userid and API Key</li>
 <li>NOTE: it has limited checks on FREE accounts</li>
+<li> Filter 2: This uses the profanity checker located at: https://www.WebPurify.com</li>
+<li>You will need to visit this site and generate a userid and API Key</li>
+<li>NOTE: it has limited free trial for checks</li>
+
 
 
 
@@ -257,11 +282,11 @@ echo "<select name=\"MAIL_TYPE\"> \n";
               switch ($MAIL_TYPE)
 				{
 					case "IMAP":
-                                		echo "<option selected value=\"".$RESPONSE_METHOD."\">".$RESPONSE_METHOD."</option> \n";
+                                		echo "<option selected value=\"".$MAIL_TYPE."\">".$MAIL_TYPE."</option> \n";
                                 		echo "<option value=\"POP3\">POP3</option> \n";
                                 		break;
 					case "POP3":
-                                		echo "<option selected value=\"".$RESPONSE_METHOD."\">".$RESPONSE_METHOD."</option> \n";
+                                		echo "<option selected value=\"".$MAIL_TYPE."\">".$MAIL_TYPE."</option> \n";
                                 		echo "<option value=\"IMAP\">IMAP</option> \n";
                         			break;
 			
@@ -289,6 +314,33 @@ echo "Mail Server Port: \n";
 echo "<input type=\"text\" name=\"MAIL_PORT\" size=\"4\" value=\"".$MAIL_PORT."\"> \n";
 
 
+echo "<p/> \n";
+
+echo "Mark Downloaded Mail: \n";
+echo "<select name=\"READ_MESSAGE_MARK\"> \n";
+if($READ_MESSAGE_MARK !="" ) {
+	switch ($READ_MESSAGE_MARK)
+	{
+		case "DELETED":
+			echo "<option selected value=\"".$READ_MESSAGE_MARK."\">".$READ_MESSAGE_MARK."</option> \n";
+			echo "<option value=\"READ\">READ</option> \n";
+			break;
+		case "READ":
+			echo "<option selected value=\"".$READ_MESSAGE_MARK."\">".$READ_MESSAGE_MARK."</option> \n";
+			echo "<option value=\"DELETED\">DELETED</option> \n";
+			break;
+				
+
+
+	}
+
+} else {
+
+	echo "<option value=\"DELETED\">DELETED</option> \n";
+	echo "<option value=\"READ\">READ</option> \n";
+}
+ 
+echo "</select> \n";
 echo "<p/> \n";
 
 echo "Valid Commands: \n";
@@ -328,6 +380,37 @@ echo "Profanity API KEY: \n";
 
 echo "<input type=\"text\" name=\"API_KEY\" size=\"64\" value=\"".$API_KEY."\"> \n";
 
+echo "<p/> \n";
+echo "Profanity Engine: \n";
+echo "<select name=\"PROFANITY_ENGINE\"> \n";
+if($PROFANITY_ENGINE !="" ) {
+	switch ($PROFANITY_ENGINE)
+	{
+		case "NEUTRINO":
+			echo "<option selected value=\"".$PROFANITY_ENGINE."\">".$PROFANITY_ENGINE."</option> \n";
+			echo "<option value=\"WEBPURIFY\">WEBPURIFY</option> \n";
+			break;
+
+		case "WEBPURIFY":
+			echo "<option selected value=\"".$PROFANITY_ENGINE."\">".$PROFANITY_ENGINE."</option> \n";
+			echo "<option value=\"NEUTRINO\">NEUTRINO</option> \n";
+			break;
+				
+		default:
+			echo "<option value=\"NEUTRINO\">NEUTRINO</option> \n";
+			echo "<option value=\"WEBPURIFY\">WEBPURIFY</option> \n";
+			break;
+
+	}
+
+} else {
+
+	echo "<option value=\"NEUTRINO\">NEUTRINO</option> \n";
+	echo "<option value=\"WEBPURIFY\">WEBPURIFY</option> \n";
+}
+ 
+echo "</select> \n";
+echo "<p/> \n";
 ?>
 <p/>
 <input id="submit_button" name="submit" type="submit" class="buttons" value="Save Config">
