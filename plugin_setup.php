@@ -199,7 +199,7 @@ if($VALID_COMMANDS == "") {
 
 
 
-<form method="post" action="http://<? echo $_SERVER['SERVER_NAME']?>/plugin.php?plugin=<?echo $pluginName;?>&page=plugin_setup.php">
+<form method="post" action="http://<? echo $_SERVER['SERVER_ADDR']?>/plugin.php?plugin=<?echo $pluginName;?>&page=plugin_setup.php">
 
 
 <?
@@ -424,7 +424,7 @@ echo "<p/> \n";
 </form>
 
 
-<form method="post" action="http://<? echo $_SERVER['SERVER_NAME']?>/plugin.php?plugin=<?echo $pluginName;?>&page=messageManagement.php">
+<form method="post" action="http://<? echo $_SERVER['SERVER_ADDR']?>/plugin.php?plugin=<?echo $pluginName;?>&page=messageManagement.php">
 <input id="MessageManagementButton" name="Message Management" type="submit" value="Message Management">
 </form>
 
